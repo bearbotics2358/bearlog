@@ -15,6 +15,8 @@ constexpr units::meter_t kMinHeight = 0_m;
 Robot::Robot():
   m_motor(kMotorId)
 {
+  BearLog::SetOptions(BearLogOptions(BearLogOptions::NTPublish::Yes,
+                                     BearLogOptions::LogWithNTPrefix::Yes));
   std::srand(std::time(nullptr));
 }
 

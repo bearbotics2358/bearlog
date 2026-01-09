@@ -1,114 +1,42 @@
 #pragma once
 
-#include <iostream>
-#include <unordered_map>
-
 #include <frc/RobotController.h>
-#include <networktables/BooleanTopic.h>
-#include <networktables/DoubleArrayTopic.h>
-#include <networktables/DoubleTopic.h>
-#include <networktables/IntegerTopic.h>
-#include <networktables/StringArrayTopic.h>
-#include <networktables/StringTopic.h>
-#include <networktables/NetworkTable.h>
-#include <networktables/NetworkTableInstance.h>
-#include <wpi/json.h>
 
-class NetworkTablesWriter {
+#include "bearlog/internal/data_log_writer.h"
+#include "bearlog/internal/network_tables_writer.h"
+
+class BearLogOptions {
 public:
-  // The NetworkTables table to log to, if NetworkTables publishing is enabled.
-  const std::string kLogTable = "Robot";
+  enum class NTPublish {No, Yes};
+  enum class LogWithNTPrefix {No, Yes};
 
-  const wpi::json kTopicProperties = {{"source", "\"BearLog\""}};
+  /**
+   * Use enum classes as parameters instead of bools:
+   * - Better type safety
+   * - Allow options to be expanded more easily in the future
+   * - Be more clear about which option is being set
+   */
+  BearLogOptions(NTPublish ntPublish = NTPublish::Yes,
+                 LogWithNTPrefix withNTPrefix = LogWithNTPrefix::Yes):
+      m_NtPublish(ntPublish),
+      m_LogWithNTPrefix(withNTPrefix) {}
 
-  NetworkTablesWriter() {
-    m_LogTable = nt::NetworkTableInstance::GetDefault().GetTable(kLogTable);
+  bool ShouldPublishToNetworkTables() {
+    return m_NtPublish == NTPublish::Yes;
   }
 
-  void Log(uint64_t timestamp, std::string key, bool value) {
-    if (m_BooleanPublishers.contains(key)) {
-      m_BooleanPublishers.at(key)->Set(value, timestamp);
-    } else {
-      nt::BooleanTopic topic = m_LogTable->GetBooleanTopic(key);
-      std::unique_ptr<nt::BooleanPublisher> new_publisher = std::make_unique<nt::BooleanPublisher>(topic.Publish());
-      new_publisher->Set(value, timestamp);
-      topic.SetProperties(kTopicProperties);
-      m_BooleanPublishers[key] = std::move(new_publisher);
-    }
-  }
-
-  void Log(uint64_t timestamp, std::string key, std::span<const double> value) {
-    if (m_DoubleArrayPublishers.contains(key)) {
-      m_DoubleArrayPublishers.at(key)->Set(value, timestamp);
-    } else {
-      nt::DoubleArrayTopic topic = m_LogTable->GetDoubleArrayTopic(key);
-      std::unique_ptr<nt::DoubleArrayPublisher> new_publisher = std::make_unique<nt::DoubleArrayPublisher>(topic.Publish());
-      new_publisher->Set(value, timestamp);
-      topic.SetProperties(kTopicProperties);
-      m_DoubleArrayPublishers[key] = std::move(new_publisher);
-    }
-  }
-
-  void Log(uint64_t timestamp, std::string key, double value) {
-    if (m_DoublePublishers.contains(key)) {
-      m_DoublePublishers.at(key)->Set(value, timestamp);
-    } else {
-      nt::DoubleTopic topic = m_LogTable->GetDoubleTopic(key);
-      std::unique_ptr<nt::DoublePublisher> new_publisher = std::make_unique<nt::DoublePublisher>(topic.Publish());
-      new_publisher->Set(value, timestamp);
-      topic.SetProperties(kTopicProperties);
-      m_DoublePublishers[key] = std::move(new_publisher);
-    }
-  }
-
-  void Log(uint64_t timestamp, std::string key, int value) {
-    if (m_IntegerPublishers.contains(key)) {
-      m_IntegerPublishers.at(key)->Set(value, timestamp);
-    } else {
-      nt::IntegerTopic topic = m_LogTable->GetIntegerTopic(key);
-      std::unique_ptr<nt::IntegerPublisher> new_publisher = std::make_unique<nt::IntegerPublisher>(topic.Publish());
-      new_publisher->Set(value, timestamp);
-      topic.SetProperties(kTopicProperties);
-      m_IntegerPublishers[key] = std::move(new_publisher);
-    }
-  }
-
-  void Log(uint64_t timestamp, std::string key, std::span<const std::string> value) {
-    if (m_StringArrayPublishers.contains(key)) {
-      m_StringArrayPublishers.at(key)->Set(value, timestamp);
-    } else {
-      nt::StringArrayTopic topic = m_LogTable->GetStringArrayTopic(key);
-      std::unique_ptr<nt::StringArrayPublisher> new_publisher = std::make_unique<nt::StringArrayPublisher>(topic.Publish());
-      new_publisher->Set(value, timestamp);
-      topic.SetProperties(kTopicProperties);
-      m_StringArrayPublishers[key] = std::move(new_publisher);
-    }
-  }
-
-  void Log(uint64_t timestamp, std::string key, const std::string& value) {
-    if (m_StringPublishers.contains(key)) {
-      m_StringPublishers.at(key)->Set(value, timestamp);
-    } else {
-      nt::StringTopic topic = m_LogTable->GetStringTopic(key);
-      std::unique_ptr<nt::StringPublisher> new_publisher = std::make_unique<nt::StringPublisher>(topic.Publish());
-      new_publisher->Set(value, timestamp);
-      topic.SetProperties(kTopicProperties);
-      m_StringPublishers[key] = std::move(new_publisher);
-    }
+  bool ShouldLogToFileWithNTPrefix() {
+    return m_LogWithNTPrefix == LogWithNTPrefix::Yes;
   }
 
 private:
-  std::shared_ptr<nt::NetworkTable> m_LogTable;
-
-  std::unordered_map<std::string, std::unique_ptr<nt::BooleanPublisher>> m_BooleanPublishers;
-  std::unordered_map<std::string, std::unique_ptr<nt::DoubleArrayPublisher>> m_DoubleArrayPublishers;
-  std::unordered_map<std::string, std::unique_ptr<nt::DoublePublisher>> m_DoublePublishers;
-  std::unordered_map<std::string, std::unique_ptr<nt::IntegerPublisher>> m_IntegerPublishers;
-  std::unordered_map<std::string, std::unique_ptr<nt::StringArrayPublisher>> m_StringArrayPublishers;
-  std::unordered_map<std::string, std::unique_ptr<nt::StringPublisher>> m_StringPublishers;
+  NTPublish m_NtPublish;
+  LogWithNTPrefix m_LogWithNTPrefix;
 };
 
 class BearLog {
+  const std::string kLogTable = "/Robot";
+
 public:
   // Delete the copy constructor. BearLog should not be cloneable.
   BearLog(const BearLog&) = delete;
@@ -116,7 +44,11 @@ public:
   // Preventing assigning a BearLog object
   BearLog& operator=(const BearLog&) = delete;
 
-  static void SetOptions() {};
+  static void SetOptions(BearLogOptions options) {
+    GetInstance().m_Options = options;
+
+    GetInstance().m_DataLogger.SetShouldUseNTTablePrefix(options.ShouldLogToFileWithNTPrefix());
+  };
 
   static void SetEnabled(bool newEnabled) {
     GetInstance().m_IsEnabled = newEnabled;
@@ -132,7 +64,11 @@ public:
     }
 
     uint64_t now = frc::RobotController::GetFPGATime();
-    GetInstance().m_Logger.Log(now, key, value);
+
+    GetInstance().m_DataLogger.Log(now, key, value);
+    if (GetInstance().m_Options.ShouldPublishToNetworkTables()) {
+      GetInstance().m_NTLogger.Log(now, key, value);
+    }
   }
 
   static void Log(std::string key, std::span<const double> value) {
@@ -141,7 +77,11 @@ public:
     }
 
     uint64_t now = frc::RobotController::GetFPGATime();
-    GetInstance().m_Logger.Log(now, key, value);
+
+    GetInstance().m_DataLogger.Log(now, key, value);
+    if (GetInstance().m_Options.ShouldPublishToNetworkTables()) {
+      GetInstance().m_NTLogger.Log(now, key, value);
+    }
   }
 
   static void Log(std::string key, double value) {
@@ -150,7 +90,11 @@ public:
     }
 
     uint64_t now = frc::RobotController::GetFPGATime();
-    GetInstance().m_Logger.Log(now, key, value);
+
+    GetInstance().m_DataLogger.Log(now, key, value);
+    if (GetInstance().m_Options.ShouldPublishToNetworkTables()) {
+      GetInstance().m_NTLogger.Log(now, key, value);
+    }
   }
 
   static void Log(std::string key, int value) {
@@ -159,7 +103,11 @@ public:
     }
 
     uint64_t now = frc::RobotController::GetFPGATime();
-    GetInstance().m_Logger.Log(now, key, value);
+
+    GetInstance().m_DataLogger.Log(now, key, value);
+    if (GetInstance().m_Options.ShouldPublishToNetworkTables()) {
+      GetInstance().m_NTLogger.Log(now, key, value);
+    }
   }
 
   static void Log(std::string key, std::span<const std::string> value) {
@@ -168,7 +116,11 @@ public:
     }
 
     uint64_t now = frc::RobotController::GetFPGATime();
-    GetInstance().m_Logger.Log(now, key, value);
+
+    GetInstance().m_DataLogger.Log(now, key, value);
+    if (GetInstance().m_Options.ShouldPublishToNetworkTables()) {
+      GetInstance().m_NTLogger.Log(now, key, value);
+    }
   }
 
   static void Log(std::string key, const std::string& value) {
@@ -177,7 +129,11 @@ public:
     }
 
     uint64_t now = frc::RobotController::GetFPGATime();
-    GetInstance().m_Logger.Log(now, key, value);
+
+    GetInstance().m_DataLogger.Log(now, key, value);
+    if (GetInstance().m_Options.ShouldPublishToNetworkTables()) {
+      GetInstance().m_NTLogger.Log(now, key, value);
+    }
   }
 
   template<typename Units>
@@ -189,12 +145,18 @@ public:
     // @todo Add a better compiler error message when the Units class doesn't support the necessary functions
 
     uint64_t now = frc::RobotController::GetFPGATime();
-    GetInstance().m_Logger.Log(now, key + "(" + value.abbreviation() + ")", value.value());
+
+    std::string key_with_units = key + "(" + value.abbreviation() + ")";
+
+    GetInstance().m_DataLogger.Log(now, key_with_units, value.value());
+    if (GetInstance().m_Options.ShouldPublishToNetworkTables()) {
+      GetInstance().m_NTLogger.Log(now, key_with_units, value.value());
+    }
   }
 
 private:
   // Make the constructor private to disallow direct instantiation of BearLog
-  BearLog() {
+  BearLog(): m_DataLogger(kLogTable), m_NTLogger(kLogTable) {
     m_IsEnabled = true;
   }
 
@@ -204,5 +166,7 @@ private:
   }
 
   bool m_IsEnabled;
-  NetworkTablesWriter m_Logger;
+  DataLogWriter m_DataLogger;
+  NetworkTablesWriter m_NTLogger;
+  BearLogOptions m_Options;
 };
