@@ -65,13 +65,21 @@ public:
 
     GetInstance().m_DataLogger.SetShouldUseNTTablePrefix(options.ShouldLogToFileWithNTPrefix());
 
-    // Enable the logging loop to log the PDH information (and other extras) at 50Hz
-    static const units::second_t kLoopPeriodSeconds = 0.02_s;
-    GetInstance().m_InternalLogNotifier.StartPeriodic(kLoopPeriodSeconds);
+    StartLoggingExtrasIfNeeded();
+  }
+
+  static void StartLoggingExtrasIfNeeded() {
+    if (GetInstance().m_Options.ShouldLogExtras()) {
+      // Enable the logging loop to log the PDH information (and other extras) at 50Hz
+      static const units::second_t kLoopPeriodSeconds = 0.02_s;
+      GetInstance().m_InternalLogNotifier.StartPeriodic(kLoopPeriodSeconds);
+    }
   }
 
   void LogExtras() {
-    LogPdh();
+    if (IsEnabled()) {
+      LogPdh();
+    }
   }
 
   void LogPdh() {
@@ -112,6 +120,14 @@ public:
 
   static void SetEnabled(bool newEnabled) {
     GetInstance().m_IsEnabled = newEnabled;
+
+    if (newEnabled) {
+      // Start logging extras if that option is selected and BearLog is being enabled
+      StartLoggingExtrasIfNeeded();
+    } else {
+      // When disabling logging, be sure to stop the internal notifier for the extras
+      GetInstance().m_InternalLogNotifier.Stop();
+    }
   }
 
   static bool IsEnabled() {
