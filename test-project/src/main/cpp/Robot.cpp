@@ -8,16 +8,17 @@
 #include <units/velocity.h>
 #include "bearlog/bearlog.h"
 
-constexpr int kMotorId = 5;
 constexpr units::meter_t kMaxHeight = 100_m;
 constexpr units::meter_t kMinHeight = 0_m;
 
-Robot::Robot():
-  m_motor(kMotorId)
+Robot::Robot()
 {
   BearLog::SetOptions(BearLogOptions(BearLogOptions::NTPublish::Yes,
-                                     BearLogOptions::LogWithNTPrefix::Yes));
+                                     BearLogOptions::LogWithNTPrefix::Yes,
+                                     BearLogOptions::LogExtras::Yes));
   std::srand(std::time(nullptr));
+
+  BearLog::SetPdh(std::make_shared<frc::PowerDistribution>());
 }
 
 void Robot::RobotPeriodic() {
