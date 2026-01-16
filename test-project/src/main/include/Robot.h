@@ -7,6 +7,7 @@
 #include <optional>
 
 #include <ctre/phoenix6/TalonFX.hpp>
+#include <frc/PowerDistribution.h>
 #include <frc/TimedRobot.h>
 #include <frc2/command/CommandPtr.h>
 
@@ -32,10 +33,13 @@ class Robot : public frc::TimedRobot {
   void TestExit() override;
 
  private:
+
+  const int kMotorId = 5;
+
   std::optional<frc2::CommandPtr> m_autonomousCommand;
 
   RobotContainer m_container;
-  ctre::phoenix6::hardware::TalonFX m_motor;
+  ctre::phoenix6::hardware::TalonFX m_motor{kMotorId};
 
   units::meter_t m_height = 0_m;
   bool m_testIncrease = true;
