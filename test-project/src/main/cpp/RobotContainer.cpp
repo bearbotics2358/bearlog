@@ -4,11 +4,7 @@
 
 #include "RobotContainer.h"
 
-#include "bearlog/bearlog.h"
-
 #include <frc2/command/Commands.h>
-#include <iostream>
-#include <frc/smartdashboard/SmartDashboard.h>
 
 RobotContainer::RobotContainer() {
   ConfigureBindings();
