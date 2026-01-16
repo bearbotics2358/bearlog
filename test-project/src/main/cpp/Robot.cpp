@@ -6,13 +6,11 @@
 
 #include <frc2/command/CommandScheduler.h>
 #include <units/velocity.h>
-#include "bearlog/bearlog.h"
 
 constexpr units::meter_t kMaxHeight = 100_m;
 constexpr units::meter_t kMinHeight = 0_m;
 
-Robot::Robot()
-{
+Robot::Robot() {
   BearLog::SetOptions(BearLogOptions(BearLogOptions::NTPublish::Yes,
                                      BearLogOptions::LogWithNTPrefix::Yes,
                                      BearLogOptions::LogExtras::Yes));
@@ -65,7 +63,7 @@ void Robot::AutonomousInit() {
   m_autonomousCommand = m_container.GetAutonomousCommand();
 
   if (m_autonomousCommand) {
-    m_autonomousCommand->Schedule();
+    frc2::CommandScheduler::GetInstance().Schedule(m_autonomousCommand.value());
   }
 }
 
