@@ -2,6 +2,7 @@
 
 #include <mutex>
 
+#include <frc/geometry/Pose3d.h>
 #include <frc/Notifier.h>
 #include <frc/PowerDistribution.h>
 #include <frc/RobotController.h>
@@ -200,6 +201,32 @@ public:
   }
 
   static void Log(std::string key, const std::string& value) {
+    if (!IsEnabled()) {
+      return;
+    }
+
+    uint64_t now = frc::RobotController::GetFPGATime();
+
+    GetInstance().m_DataLogger.Log(now, key, value);
+    if (GetInstance().m_Options.ShouldPublishToNetworkTables()) {
+      GetInstance().m_NTLogger.Log(now, key, value);
+    }
+  }
+
+  static void Log(std::string key, const frc::Pose3d& value) {
+    if (!IsEnabled()) {
+      return;
+    }
+
+    uint64_t now = frc::RobotController::GetFPGATime();
+
+    GetInstance().m_DataLogger.Log(now, key, value);
+    if (GetInstance().m_Options.ShouldPublishToNetworkTables()) {
+      GetInstance().m_NTLogger.Log(now, key, value);
+    }
+  }
+
+  static void Log(std::string key, std::vector<frc::Pose3d>& value) {
     if (!IsEnabled()) {
       return;
     }

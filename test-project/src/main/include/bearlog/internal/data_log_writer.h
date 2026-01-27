@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include "frc/DataLogManager.h"
+#include "frc/geometry/Pose3d.h"
 #include "wpi/DataLog.h"
 
 class DataLogWriter {
@@ -77,6 +78,28 @@ public:
     }
   }
 
+  void Log(uint64_t timestamp, std::string key, const frc::Pose3d& value) {
+    if (m_PoseLogs.contains(key)) {
+      m_PoseLogs.at(key).Append(value);
+    } else {
+      auto new_pose_log = wpi::log::StructLogEntry<frc::Pose3d>(m_Log, GetPrefixKey(key), kEntryMetadata, timestamp);
+
+      new_pose_log.Append(value);
+      m_PoseLogs[key] = std::move(new_pose_log);
+    }
+  }
+
+  void Log(uint64_t timestamp, std::string key, std::vector<frc::Pose3d>& value) {
+    if (m_PoseArrayLogs.contains(key)) {
+      m_PoseArrayLogs.at(key).Append(value);
+    } else {
+      auto new_pose_array_log = wpi::log::StructArrayLogEntry<frc::Pose3d>(m_Log, GetPrefixKey(key), kEntryMetadata, timestamp);
+
+      new_pose_array_log.Append(value);
+      m_PoseArrayLogs[key] = std::move(new_pose_array_log);
+    }
+  }
+
   void SetShouldUseNTTablePrefix(bool useNTTablePrefix) {
     // Use the NT/ prefix when logging to file so that when viewing .wpilog data in AdvantageScope,
     // the values can be re-used as when they are being viewed live on NetworkTables.
@@ -104,4 +127,6 @@ private:
   std::unordered_map<std::string, wpi::log::IntegerLogEntry> m_IntegerLogs;
   std::unordered_map<std::string, wpi::log::StringArrayLogEntry> m_StringArrayLogs;
   std::unordered_map<std::string, wpi::log::StringLogEntry> m_StringLogs;
+  std::unordered_map<std::string, wpi::log::StructLogEntry<frc::Pose3d>> m_PoseLogs;
+  std::unordered_map<std::string, wpi::log::StructArrayLogEntry<frc::Pose3d>> m_PoseArrayLogs;
 };

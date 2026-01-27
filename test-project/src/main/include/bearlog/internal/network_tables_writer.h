@@ -2,12 +2,15 @@
 
 #include <unordered_map>
 
+#include <frc/geometry/Pose3d.h>
 #include <networktables/BooleanTopic.h>
 #include <networktables/DoubleArrayTopic.h>
 #include <networktables/DoubleTopic.h>
 #include <networktables/IntegerTopic.h>
 #include <networktables/StringArrayTopic.h>
 #include <networktables/StringTopic.h>
+#include <networktables/StructTopic.h>
+#include <networktables/StructArrayTopic.h>
 #include <networktables/NetworkTable.h>
 #include <networktables/NetworkTableInstance.h>
 #include <wpi/json.h>
@@ -92,6 +95,30 @@ public:
     }
   }
 
+  void Log(uint64_t timestamp, std::string key, const frc::Pose3d& value) {
+    if (m_PosePublishers.contains(key)) {
+      m_PosePublishers.at(key)->Set(value, timestamp);
+    } else {
+      nt::StructTopic<frc::Pose3d> topic = m_LogTable->GetStructTopic<frc::Pose3d>(key);
+      std::unique_ptr<nt::StructPublisher<frc::Pose3d>> new_publisher = std::make_unique<nt::StructPublisher<frc::Pose3d>>(topic.Publish());
+      new_publisher->Set(value, timestamp);
+      topic.SetProperties(kTopicProperties);
+      m_PosePublishers[key] = std::move(new_publisher);
+    }
+  }
+
+  void Log(uint64_t timestamp, std::string key, std::vector<frc::Pose3d>& value) {
+    if (m_PoseArrayPublishers.contains(key)) {
+      m_PoseArrayPublishers.at(key)->Set(value, timestamp);
+    } else {
+      nt::StructArrayTopic<frc::Pose3d> topic = m_LogTable->GetStructArrayTopic<frc::Pose3d>(key);
+      std::unique_ptr<nt::StructArrayPublisher<frc::Pose3d>> new_publisher = std::make_unique<nt::StructArrayPublisher<frc::Pose3d>>(topic.Publish());
+      new_publisher->Set(value, timestamp);
+      topic.SetProperties(kTopicProperties);
+      m_PoseArrayPublishers[key] = std::move(new_publisher);
+    }
+  }
+
 private:
   std::shared_ptr<nt::NetworkTable> m_LogTable;
 
@@ -101,4 +128,6 @@ private:
   std::unordered_map<std::string, std::unique_ptr<nt::IntegerPublisher>> m_IntegerPublishers;
   std::unordered_map<std::string, std::unique_ptr<nt::StringArrayPublisher>> m_StringArrayPublishers;
   std::unordered_map<std::string, std::unique_ptr<nt::StringPublisher>> m_StringPublishers;
+  std::unordered_map<std::string, std::unique_ptr<nt::StructPublisher<frc::Pose3d>>> m_PosePublishers;
+  std::unordered_map<std::string, std::unique_ptr<nt::StructArrayPublisher<frc::Pose3d>>> m_PoseArrayPublishers;
 };
